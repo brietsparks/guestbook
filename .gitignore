@@ -1,0 +1,4 @@
+server/main
+*.env
+node_modules/
+*env.sh
