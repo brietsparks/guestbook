@@ -2,18 +2,14 @@ package app
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/brietsparks/guestbook-server/lib"
 )
 
 type Args struct {
-	Region         string
-	DynamoEndpoint string
-	DynamoTable    string
-	KeyId          string
-	KeySecret      string
+	DynamoTable string
+	Region      string
 }
 
 type App struct {
@@ -24,13 +20,9 @@ type App struct {
 }
 
 func NewApp(args Args) (*App, error) {
-	cfg := &aws.Config{
-		Region:      aws.String(args.Region),
-		Endpoint:    &args.DynamoEndpoint,
-		Credentials: credentials.NewStaticCredentials(args.KeyId, args.KeySecret, ""),
-	}
-
-	sess, err := session.NewSession(cfg)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(args.Region),
+	})
 	if err != nil {
 		return nil, err
 	}

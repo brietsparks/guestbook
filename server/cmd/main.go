@@ -7,19 +7,13 @@ import (
 )
 
 func main() {
-	region := lib.RequireVar("REGION")
-	dynamoEndpoint := lib.RequireVar("DYNAMO_ENDPOINT")
-	dynamoTable := lib.RequireVar("DYNAMO_TABLE")
-	keyId := lib.RequireVar("KEY_ID")
-	keySecret := lib.RequireVar("KEY_SECRET")
 	serverPort := lib.RequireVar("SERVER_PORT")
+	dynamoTable := lib.RequireVar("DYNAMO_TABLE")
+	region := lib.RequireVar("AWS_REGION")
 
 	a, err := app.NewApp(app.Args{
-		Region: region,
-		DynamoEndpoint: dynamoEndpoint,
 		DynamoTable: dynamoTable,
-		KeyId: keyId,
-		KeySecret: keySecret,
+		Region: region,
 	})
 	if err != nil {
 		log.Fatalf("failed to create app: %s", err)
