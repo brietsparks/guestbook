@@ -1,3 +1,9 @@
+*.tfvars
+*.tfvars*
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+
 server/main
 *.env
 node_modules/

@@ -1,0 +1,38 @@
+[
+  {
+    "image": "brietsparks/guestbook",
+    "cpu": 256,
+    "memory": 512,
+    "name": "guestbook",
+    "networkMode": "awsvpc",
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "hostPort": 80,
+        "protocol": "tcp"
+      }
+    ],
+    "environment": [
+      {
+        "name": "SERVER_PORT",
+        "value": "80"
+      },
+      {
+        "name": "DYNAMO_TABLE",
+        "value": "guestbook"
+      },
+      {
+        "name": "AWS_REGION",
+        "value": "us-west-2"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/fargate/service/guestbook",
+        "awslogs-region": "${var.region}",
+        "awslogs-stream-prefix": "ecs"
+      }
+    }
+  }
+]
