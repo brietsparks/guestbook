@@ -8,7 +8,7 @@ import (
 )
 
 func CreateTable(db *dynamodb.DynamoDB, tableName string) error {
-	log.Println("check wheter table exists")
+	log.Println("checking whether table exists")
 	exists, err := checkTableExists(db, tableName)
 	if err != nil {
 		return err
@@ -24,14 +24,22 @@ func CreateTable(db *dynamodb.DynamoDB, tableName string) error {
 		TableName: aws.String(tableName),
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
-				AttributeName: aws.String("id"),
+				AttributeName: aws.String("ip"),
 				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("ts"),
+				AttributeType: aws.String("N"),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("id"),
+				AttributeName: aws.String("ip"),
 				KeyType:       aws.String("HASH"),
+			},
+			{
+				AttributeName: aws.String("ts"),
+				KeyType:       aws.String("RANGE"),
 			},
 		},
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{

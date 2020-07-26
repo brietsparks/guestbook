@@ -8,18 +8,18 @@ export default class DataClient {
     this.urlBase = urlBase;
   }
 
-  async createItem(value: string) {
+  async createItem(value: string): Promise<Item> {
     const response = await httpClient
-      .post(`${this.urlBase}/item`)
+      .post(`${this.urlBase}/items`)
       .send({ value });
 
     return response.body as Item;
   }
 
-  async getItem(id: string) {
+  async getItems(): Promise<Item[]> {
     const response = await httpClient
-      .get(`${this.urlBase}/item/${id}`)
+      .get(`${this.urlBase}/items`)
 
-    return response.body as Item;
+    return response.body as Item[];
   }
 }

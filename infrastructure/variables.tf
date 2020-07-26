@@ -22,9 +22,9 @@ variable "availability_zones" {
 }
 
 variable "dynamo_read_capacity" {
-  default = 4
+  default = 15
 }
 
 variable "dynamo_write_capacity" {
-  default = 4
+  default = 15
 }

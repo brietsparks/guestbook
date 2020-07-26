@@ -3,7 +3,7 @@
   "description": "A library for accessing the guestbook server API",
   "version": "1.0.0",
   "scripts": {
-    "test": "jest"
+    "test": "jest --watchAll"
   },
   "author": "",
   "license": "ISC",

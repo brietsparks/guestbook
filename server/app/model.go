@@ -1,17 +1,18 @@
 package app
 
 import (
+	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/brietsparks/guestbook-server/lib"
+	"net"
 	"time"
 )
 
 type Item struct {
-	Id    string `json:"id",dynamodbav:"id"`
-	Value string `json:"value",dynamodbav:"value"`
+	Ip    string `json:"ip",dynamodbav:"ip"`
 	Ts    int32  `json:"ts",dynamodbav:"ts"`
+	Value string `json:"value",dynamodbav:"value"`
 }
 
 type Model struct {
@@ -30,9 +31,13 @@ func (m *Model) Ping() bool {
 	return true
 }
 
-func (m *Model) CreateItem(value string) (*Item, error) {
+func (m *Model) CreateItem(ip string, value string) (*Item, error) {
+	if !isIpv4(ip) {
+		return nil, errors.New("invalid ip")
+	}
+
 	item := Item{
-		Id:    lib.RandString(12),
+		Ip:    ip,
 		Value: value,
 		Ts:    int32(time.Now().Unix()),
 	}
@@ -50,26 +55,39 @@ func (m *Model) CreateItem(value string) (*Item, error) {
 	return &item, err
 }
 
-func (m *Model) GetItem(id string) (*Item, error) {
-	result, err := m.db.GetItem(&dynamodb.GetItemInput{
+func (m *Model) GetItemsByIp(ip string, limit int64) (*[]Item, error) {
+	if !isIpv4(ip) {
+		return nil, errors.New("invalid ip")
+	}
+
+	input := &dynamodb.QueryInput{
 		TableName: aws.String(m.tableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"id": { S: aws.String(id) },
+		KeyConditions: map[string]*dynamodb.Condition{
+			"ip": {
+				ComparisonOperator: aws.String("EQ"),
+				AttributeValueList: []*dynamodb.AttributeValue{
+					{ S: aws.String(ip) },
+				},
+			},
 		},
-	})
+		ScanIndexForward: aws.Bool(false),
+		Limit: aws.Int64(limit),
+	}
+
+	result, err :=  m.db.Query(input)
 	if err != nil {
 		return nil, err
 	}
 
-	item := &Item{}
-	err = dynamodbattribute.UnmarshalMap(result.Item, item)
+	items := &[]Item{}
+	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, items)
 	if err != nil {
 		return nil, err
 	}
 
-	if item.Id == "" {
-		return nil, nil
-	}
+	return items, nil
+}
 
-	return item, nil
+func isIpv4(host string) bool {
+	return net.ParseIP(host) != nil
 }

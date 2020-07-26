@@ -39,3 +39,4 @@ func NewApp(args Args) (*App, error) {
 		Serve:   serve,
 	}, nil
 }
+

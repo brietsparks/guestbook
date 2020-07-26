@@ -214,11 +214,17 @@ resource "aws_dynamodb_table" "guestbook_api" {
   name           = "guestbook"
   read_capacity  = var.dynamo_read_capacity
   write_capacity = var.dynamo_write_capacity
-  hash_key       = "id"
+  hash_key       = "ip"
+  range_key      = "ts"
 
   attribute {
-    name = "id"
+    name = "ip"
     type = "S"
+  }
+
+  attribute {
+    name = "ts"
+    type = "N"
   }
 
   tags = {

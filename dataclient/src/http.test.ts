@@ -1,4 +1,5 @@
 import DataClient from './http';
+import { Item } from './types';
 
 const urlBase = process.env['SERVER_URL'];
 if (!urlBase) {
@@ -8,14 +9,27 @@ if (!urlBase) {
 
 const dataClient = new DataClient(urlBase);
 
+const randomString = () => Math.random().toString(36).slice(-5);
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 describe('testing', () => {
   test('create and retrieve item', async () => {
-    const created = await dataClient.createItem('foobar');
-    const retrieved = await dataClient.getItem(created.id);
+    const values = [...Array(12)].map(randomString);
+    const results: Record<number, Item> = {};
 
-    expect(created.value).toEqual('foobar');
-    expect(typeof created.id).toEqual('string');
-    expect(typeof created.ts).toEqual('number');
-    expect(created).toEqual(retrieved);
-  });
+    for (let value of values) {
+      const created = await dataClient.createItem(value);
+      expect(created.value).toEqual(value);
+      expect(typeof created.ip).toEqual('string');
+      expect(typeof created.ts).toEqual('number');
+      results[created.ts] = created;
+      await delay(800);
+    }
+
+    const retrieved = await dataClient.getItems();
+    expect(retrieved.length).toEqual(10);
+
+    const expectedRetrieval = Object.values(results).sort((a, b) => a.ts < b.ts ? 1 : -1).slice(0, 10);
+    expect(retrieved).toEqual(expectedRetrieval);
+  }, 30000);
 });
