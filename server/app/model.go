@@ -36,6 +36,10 @@ func (m *Model) CreateItem(ip string, value string) (*Item, error) {
 		return nil, errors.New("invalid ip")
 	}
 
+	if len(value) > 280 {
+		return nil, errors.New("value must be 280 characters or less")
+	}
+
 	item := Item{
 		Ip:    ip,
 		Value: value,

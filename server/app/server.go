@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/brietsparks/guestbook-server/lib"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -22,6 +23,7 @@ func Serve(model *Model, port string, logger lib.Logger) error {
 		logger: logger,
 	}
 
+	r.Use(cors.Default()) // todo: replace default cors
 	r.GET("/health", s.health)
 	r.GET("/items", s.getItemsByIp)
 	r.POST("/items", s.createItem)
