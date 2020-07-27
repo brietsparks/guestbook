@@ -83,13 +83,13 @@ resource "aws_ecs_task_definition" "guestbook_api" {
       },
       {
         "name": "AWS_REGION",
-        "value": "us-west-2"
+        "value": "${var.region}"
       }
     ],
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
-        "awslogs-group": "/fargate/service/guestbook",
+        "awslogs-group": "${aws_cloudwatch_log_group.guestbook_api.name}",
         "awslogs-region": "${var.region}",
         "awslogs-stream-prefix": "ecs"
       }
@@ -99,7 +99,7 @@ resource "aws_ecs_task_definition" "guestbook_api" {
 DEFINITION
 }
 
-resource "aws_cloudwatch_log_group" "logs" {
+resource "aws_cloudwatch_log_group" "guestbook_api" {
   name              = "/fargate/service/guestbook"
 }
 
@@ -205,7 +205,6 @@ resource "aws_security_group" "guestbook_api_alb" {
 //  instance_id   = aws_alb.guestbook_api.id
 //  allocation_id = aws_eip.guestbook_api.id
 //}
-
 
 //
 // database

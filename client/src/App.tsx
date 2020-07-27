@@ -125,7 +125,7 @@ interface ItemViewProps {
   value: string
 }
 function ItemView({ ts, value }: ItemViewProps) {
-  const formattedTs = moment(new Date(ts * 1000)).format('M-D-YYYY hh:mm:ss a');
+  const formattedTs = moment(new Date(ts * 1000)).format('M-D-YYYY h:mm a');
 
   return (
     <div className="item">
