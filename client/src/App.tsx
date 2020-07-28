@@ -5,9 +5,9 @@ import moment from 'moment';
 
 import './App.css';
 
-const apiUrl = process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_SERVER_URL;
 if (!apiUrl) {
-  throw new Error('environment variable REACT_APP_API_URL missing');
+  throw new Error('environment variable REACT_APP_SERVER_URL missing');
 }
 
 export default function App() {
