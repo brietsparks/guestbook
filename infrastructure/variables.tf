@@ -28,12 +28,12 @@ variable "client_image" {
   default = "brietsparks/guestbook-client"
 }
 
-variable "server_port" {
+variable "server_container_port" {
   description = "the port that the server serves from"
   default = 80
 }
 
-variable "client_port" {
+variable "client_container_port" {
   description = "the port that the client serves from"
   default = 80
 }

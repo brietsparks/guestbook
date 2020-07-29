@@ -4,7 +4,8 @@ COPY . /guestbook-client
 RUN yarn
 RUN yarn build
 
-FROM nginx:1.12-alpine
-COPY --from=builder /guestbook-client/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# allows the static CRA app to use runtime environment variables, see:
+# https://github.com/andrewmclagan/react-env/blob/master/examples/create-react-app/README.md#deploying-in-production
+FROM beamaustralia/react-env
+WORKDIR /var/www
+COPY --from=builder /guestbook-client/build /var/www

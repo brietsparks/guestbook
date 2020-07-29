@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAsync } from 'react-async';
 import httpClient from 'superagent';
 import moment from 'moment';
-
 import './App.css';
 
-const apiUrl = process.env.REACT_APP_SERVER_URL;
+// allows the static CRA app to use runtime environment variables
+// @ts-ignore
+const apiUrl = window._env.REACT_APP_SERVER_URL;
 if (!apiUrl) {
   throw new Error('environment variable REACT_APP_SERVER_URL missing');
 }
@@ -37,7 +38,7 @@ export default function App() {
           }
 
           <ol id="items">
-            {items?.length && items.slice(0, 10).map((item: Item) => (
+            {items?.slice(0, 10).map((item: Item) => (
               <li key={item.ts}>
                 <ItemView value={item.value} ts={item.ts} />
               </li>

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@beam-australia/react-env": "^2.1.2",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
@@ -20,6 +21,7 @@
     "typescript": "~3.7.2"
   },
   "scripts": {
+    "prestart": "react-env",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

@@ -20,6 +20,15 @@ module "vpc" {
   private_subnets      = ["10.0.101.0/24" , "10.0.102.0/24"]
 }
 
+//resource "aws_eip" "guestbook" {
+//  vpc = true
+//}
+//resource "aws_eip_association" "guestbook" {
+//  instance_id   = aws_alb.guestbook.id
+//  allocation_id = aws_eip.guestbook.id
+//  depends_on = [aws_alb.guestbook, aws_eip.guestbook]
+//}
+
 module "nat" {
   source = "int128/nat-instance/aws"
   name                        = "guestbook"
@@ -47,7 +56,7 @@ resource "aws_ecs_service" "guestbook_server" {
   load_balancer {
     target_group_arn = aws_alb_target_group.guestbook_server.arn
     container_name   = local.server_container_name
-    container_port   = var.server_port
+    container_port   = var.server_container_port
   }
   network_configuration {
     security_groups = [aws_security_group.guestbook_server.id]
@@ -65,7 +74,7 @@ resource "aws_ecs_service" "guestbook_client" {
   load_balancer {
     target_group_arn = aws_alb_target_group.guestbook_client.arn
     container_name   = local.client_container_name
-    container_port   = var.client_port
+    container_port   = var.client_container_port
   }
   network_configuration {
     security_groups = [aws_security_group.guestbook_server.id]
@@ -92,15 +101,15 @@ resource "aws_ecs_task_definition" "guestbook_server" {
     "networkMode": "awsvpc",
     "portMappings": [
       {
-        "containerPort": 80,
-        "hostPort": 80,
+        "containerPort": ${var.server_container_port},
+        "hostPort": ${var.server_container_port},
         "protocol": "tcp"
       }
     ],
     "environment": [
       {
         "name": "SERVER_PORT",
-        "value": "80"
+        "value": "${var.server_container_port}"
       },
       {
         "name": "DYNAMO_TABLE",
@@ -131,6 +140,7 @@ resource "aws_ecs_task_definition" "guestbook_client" {
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.guestbook_task_execution.arn
+
   container_definitions    = <<DEFINITION
 [
   {
@@ -141,15 +151,15 @@ resource "aws_ecs_task_definition" "guestbook_client" {
     "networkMode": "awsvpc",
     "portMappings": [
       {
-        "containerPort": 80,
-        "hostPort": 80,
+        "containerPort": ${var.client_container_port},
+        "hostPort": ${var.client_container_port},
         "protocol": "tcp"
       }
     ],
     "environment": [
       {
         "name": "REACT_APP_SERVER_URL",
-        "value": "${aws_alb.guestbook.dns_name}"
+        "value": "http://${aws_alb.guestbook.dns_name}"
       }
     ],
     "logConfiguration": {
@@ -203,8 +213,8 @@ resource "aws_security_group" "guestbook_server" {
 
   ingress {
     protocol = "tcp"
-    from_port = var.server_port
-    to_port = var.server_port
+    from_port = var.server_container_port
+    to_port = var.server_container_port
     security_groups = [aws_security_group.guestbook.id] // not sure why ingress rule gets an array of sec groups
   }
 
@@ -227,37 +237,10 @@ resource "aws_alb" "guestbook" {
   security_groups = [aws_security_group.guestbook.id]
 }
 
-resource "aws_alb_target_group" "guestbook_server" {
-  name = "guestbook-server"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
-  target_type = "ip"
-  depends_on = [aws_alb.guestbook]
-}
-
-resource "aws_alb_target_group" "guestbook_client" {
-  name = "guestbook-client"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
-  target_type = "ip"
-  depends_on = [aws_alb.guestbook]
-}
-
 resource "aws_alb_listener" "guestbook" {
   load_balancer_arn = aws_alb.guestbook.id
   port              = "80"
   protocol          = "HTTP"
-
-//  default_action {
-//    type = "fixed-response"
-//    fixed_response {
-//      content_type = "text/plain"
-//      message_body = "Fixed response content"
-//      status_code  = "200"
-//    }
-//  }
 
   default_action {
     target_group_arn = aws_alb_target_group.guestbook_client.id
@@ -281,6 +264,24 @@ resource "aws_alb_listener_rule" "guestbook_server" {
   }
 }
 
+resource "aws_alb_target_group" "guestbook_server" {
+  name = "guestbook-server"
+  port        = var.server_container_port
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+  depends_on = [aws_alb.guestbook]
+}
+
+resource "aws_alb_target_group" "guestbook_client" {
+  name = "guestbook-client"
+  port        = var.client_container_port
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+  depends_on = [aws_alb.guestbook]
+}
+
 resource "aws_security_group" "guestbook" {
   name        = "guestbook"
   description = "controls access to the load balancer"
@@ -300,15 +301,6 @@ resource "aws_security_group" "guestbook" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-//resource "aws_eip" "guestbook" {
-//  vpc = true
-//}
-//resource "aws_eip_association" "guestbook" {
-//  instance_id   = aws_alb.guestbook.id
-//  allocation_id = aws_eip.guestbook.id
-//  depends_on = [aws_alb.guestbook, aws_eip.guestbook]
-//}
 
 //
 // database
