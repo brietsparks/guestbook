@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	clientOrigin := lib.RequireVar("CLIENT_ORIGIN")
 	serverPort := lib.RequireVar("SERVER_PORT")
 	dynamoTable := lib.RequireVar("DYNAMO_TABLE")
 	region := lib.RequireVar("AWS_REGION")
@@ -14,6 +15,7 @@ func main() {
 	a, err := app.NewApp(app.Args{
 		DynamoTable: dynamoTable,
 		Region: region,
+		ClientOrigin: clientOrigin,
 	})
 	if err != nil {
 		log.Fatalf("failed to create app: %s", err)

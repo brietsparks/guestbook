@@ -10,6 +10,7 @@ import (
 type Args struct {
 	DynamoTable string
 	Region      string
+	ClientOrigin 		string
 }
 
 type App struct {
@@ -30,7 +31,9 @@ func NewApp(args Args) (*App, error) {
 	db := dynamodb.New(sess)
 	migrate := func() error { return CreateTable(db, args.DynamoTable) }
 	model := NewModel(db, args.DynamoTable)
-	serve := func(port string) error { return Serve(model, port, lib.DefaultLogger) }
+	serve := func(port string) error {
+		return Serve(model, port, lib.DefaultLogger, args.ClientOrigin)
+	}
 
 	return &App{
 		Db:      db,

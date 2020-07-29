@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type Server struct {
@@ -14,7 +15,7 @@ type Server struct {
 	logger lib.Logger
 }
 
-func Serve(model *Model, port string, logger lib.Logger) error {
+func Serve(model *Model, port string, logger lib.Logger, clientOrigin string) error {
 	r := gin.Default()
 
 	s := &Server{
@@ -23,7 +24,12 @@ func Serve(model *Model, port string, logger lib.Logger) error {
 		logger: logger,
 	}
 
-	r.Use(cors.Default()) // todo: replace default cors
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{clientOrigin},
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"Content-Type"},
+		MaxAge: 24 * time.Hour,
+	}))
 	r.GET("/health", s.health)
 	r.GET("/items", s.getItemsByIp)
 	r.POST("/items", s.createItem)

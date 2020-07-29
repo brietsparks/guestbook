@@ -20,15 +20,6 @@ module "vpc" {
   private_subnets      = ["10.0.101.0/24" , "10.0.102.0/24"]
 }
 
-//resource "aws_eip" "guestbook" {
-//  vpc = true
-//}
-//resource "aws_eip_association" "guestbook" {
-//  instance_id   = aws_alb.guestbook.id
-//  allocation_id = aws_eip.guestbook.id
-//  depends_on = [aws_alb.guestbook, aws_eip.guestbook]
-//}
-
 module "nat" {
   source = "int128/nat-instance/aws"
   name                        = "guestbook"
@@ -50,7 +41,7 @@ resource "aws_ecs_service" "guestbook_server" {
   name            = "guestbook_server"
   cluster         = aws_ecs_cluster.guestbook.id
   task_definition = aws_ecs_task_definition.guestbook_server.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
 
   load_balancer {
@@ -68,7 +59,7 @@ resource "aws_ecs_service" "guestbook_client" {
   name            = "guestbook_client"
   cluster         = aws_ecs_cluster.guestbook.id
   task_definition = aws_ecs_task_definition.guestbook_client.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
 
   load_balancer {
@@ -78,8 +69,7 @@ resource "aws_ecs_service" "guestbook_client" {
   }
   network_configuration {
     security_groups = [aws_security_group.guestbook_server.id]
-    subnets          = module.vpc.public_subnets
-    assign_public_ip = true // needs public ip or else it cannot pull the image
+    subnets          = module.vpc.private_subnets
   }
 }
 
@@ -118,6 +108,10 @@ resource "aws_ecs_task_definition" "guestbook_server" {
       {
         "name": "AWS_REGION",
         "value": "${var.region}"
+      },
+      {
+        "name": "CLIENT_ORIGIN",
+        "value": "http://${aws_alb.guestbook.dns_name}"
       }
     ],
     "logConfiguration": {
