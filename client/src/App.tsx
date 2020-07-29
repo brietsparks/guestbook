@@ -12,38 +12,36 @@ if (!apiUrl) {
 }
 
 export default function App() {
-  const {
-    data: initialItems,
-    error: loadError,
-    // isPending: isLoading // todo
-  } = useAsync({ promiseFn: getItems });
-
+  const { data: initialItems, error: loadError } = useAsync({ promiseFn: getItems });
   const [items, setItems] = useState();
   useEffect(() => setItems(initialItems), [setItems, initialItems]);
+  const [saveError, setSaveError] = useState();
 
   const handleNewItem = (item: Item) => {
     const next = [...items];
     next.unshift(item);
     setItems(next);
+    setSaveError('');
   }
 
   return (
     <div id="hero-outer">
       <div id="hero-inner">
         <div id="content">
-          <Form onNewItem={handleNewItem} />
+          <Form onNewItem={handleNewItem} onError={setSaveError}/>
 
-          {loadError &&
-          <p>Error loading data</p>
-          }
+          <div id="items">
+            {loadError && !items && <p className="error">Error loading data :(</p>}
+            {saveError && <p className="error">Error saving data :(</p>}
 
-          <ol id="items">
+            <ol>
             {items?.slice(0, 10).map((item: Item) => (
               <li key={item.ts}>
                 <ItemView value={item.value} ts={item.ts} />
               </li>
             ))}
-          </ol>
+            </ol>
+          </div>
         </div>
       </div>
     </div>
@@ -56,13 +54,10 @@ export interface Item {
   ts: number,
 }
 
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 async function createItem(value: string): Promise<Item> {
   const response = await httpClient
     .post(`${apiUrl}/items`)
     .send({ value });
-
-  await delay(1000)
 
   return response.body as Item;
 }
@@ -75,10 +70,11 @@ async function getItems(): Promise<Item[]> {
 }
 
 interface FormProps {
-  onNewItem: (item: Item) => void
+  onNewItem: (item: Item) => void,
+  onError: (value: string) => void,
 }
 
-function Form({ onNewItem }: FormProps) {
+function Form({ onNewItem, onError }: FormProps) {
   const [value, setValue] = useState('');
   const valueIsValid = !!value && value.length <= 280;
 
@@ -87,13 +83,10 @@ function Form({ onNewItem }: FormProps) {
     onNewItem(item);
   }
 
-  const {
-    isPending: isSaving,
-    error: saveError,
-    run: save
-  } = useAsync({
+  const { isPending: isSaving, run: save } = useAsync({
     deferFn: ([value]) => createItem(value),
     onResolve: handleResolve,
+    onReject: e => onError(e.message),
   });
 
   const handleSubmit = () => {
@@ -115,8 +108,6 @@ function Form({ onNewItem }: FormProps) {
         onClick={handleSubmit}
         disabled={!valueIsValid || isSaving}
       >Submit</button>
-
-      {saveError && <p>Oops, an error occurred!</p>}
     </div>
   );
 }
