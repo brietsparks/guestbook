@@ -1,3 +1,106 @@
 # Guestbook
 
-A simple app with a focus on clean code architecture, infrastructure + deployment automation, and observability.
+A simple app with automated infrastructure deployment.
+
+- Terraform infrastructure deployment to AWS
+- Golang JSON+HTTP API server
+- React webapp client
+- Dockerized, horizontally scaled via Fargate 
+- DynamoDB
+
+The app is a guestbook where a user can see and submit comments for their particular IP address.
+
+## Architecture
+
+The frontend and backend applications each run in Docker containers and are horizontally scaled in an ECS Fargate cluster. They sit in private subnets but can be reached through an application load balancer and are able to pull from DockerHub ([server](https://hub.docker.com/repository/docker/brietsparks/guestbook-server) and [client](https://hub.docker.com/repository/docker/brietsparks/guestbook-client)) via a NAT instance. The backend application stores data in a DynamoDB table. All IAM permissions are provided via IAM roles so that no long-lived access keys exist.   
+
+![AWS Architecture Diagram for Guestbook Application](https://raw.githubusercontent.com/brietsparks/guestbook/master/aws-arch-diagram.png "AWS Architecture Diagram for Guestbook Application")
+
+## Setup
+Deploying the infrastructure and applications to AWS requires just a few commands. **Warning: this will create AWS resources that cost money**. After deploying and testing you can run `terraform destroy` (see the steps below) to destroy the resources. 
+
+**Dependencies**
+- an AWS account with an IAM user capable of creating the resources. Currently, I have been using `AdministratorAccess`. Minimizing the required permission scope is on the list of todos (see "Next steps" section below).
+- a locally configured AWS profile
+- Terraform `~> 0.12.0`
+
+**Steps**
+1. clone the repo
+    ```
+    git clone git@github.com:brietsparks/guestbook.git
+    ```
+
+2. navigate to the `/infrastructure` directory,
+    ```
+    cd guestbook/infrastructure
+    ``` 
+    create a Terrfaform var-file,
+    ```
+    touch .tfvars
+    ```
+    and set your AWS profile in the file.
+    ```
+    // .tfvars
+    profile = "my-iam-profile"
+    ```
+    See the "Terraform variables" section below for customizability.
+    
+3. Initialize Terraform
+    ```
+    terraform init
+    ``` 
+    
+4. Run Terraform in the infrastructure directory:
+    ```
+    terraform apply -var-file=.tfvars
+    ```
+    You will be prompted with a Terraform plan. Type `yes` to create the resources.
+   
+5. After creating the resources, Terraform will output the load balancer's DNS host address:
+    ```
+    alb_dns_host = http://guestbook-server-123456789.us-west-2.elb.amazonaws.com
+    ``` 
+    In you browser, navigate to this url to use the app.
+
+6. If you want to tear down the app and its AWS resources, run:
+    ```
+    terraform destroy -var-file=.tfvars
+    ```
+    You will be prompted with a Terraform plan. Type `yes` to destroy the resources.
+    
+A user can see and submit comments for their particular IP address:
+![Guestbook Application Demo GIF](https://raw.githubusercontent.com/brietsparks/guestbook/master/demo.gif "Guestbook Application Demo GIF")
+
+## Terraform Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| availability\_zones | array of aws availability zones of the provided region | `list` | <pre>[<br>  "us-west-2a",<br>  "us-west-2b"<br>]</pre> | no |
+| client\_container\_port | the port that the client serves from | `string` | `80` | no |
+| client\_image | image name of the client app | `string` | `"brietsparks/guestbook-client"` | no |
+| dynamo\_read\_capacity | the dynamo read throughput | `string` | `15` | no |
+| dynamo\_write\_capacity | the dynamo write throughput | `string` | `15` | no |
+| profile | an aws profile to act on behalf of terraform | `string` | n/a | yes |
+| region | an aws region | `string` | `"us-west-2"` | no |
+| server\_container\_port | the port that the server serves from | `string` | `80` | no |
+| server\_image | image name of the server app | `string` | `"brietsparks/guestbook-server"` | no |
+
+## Terraform Outputs
+
+| Name | Description |
+|------|-------------|
+| alb\_dns\_host | the load balancer's DNS host address |
+
+
+## Next steps
+Here are a few things that should be done next:
+
+- HTTPS via ELB SSL termination
+- VPC endpoints for DynamoDB
+- CI/CD pipeline
+- minimize permission scope of TF AWS profile 
+- Terratest
+- vendor-neutral rewrite
+
+## LICENSE
+MIT
