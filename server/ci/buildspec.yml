@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - docker build -t guestbook -f server/ci/Dockerfile server/.
+  post_build:
+    commands:
+      - echo "done!"
+      - docker images

@@ -6,6 +6,17 @@ variable "profile" {
   description = "an aws profile to act on behalf of terraform"
 }
 
+// https://docs.aws.amazon.com/codepipeline/latest/userguide/GitHub-create-personal-token-CLI.html
+variable "github_oauth_token" {
+  type = "string"
+  description = " the GitHub authentication token that allows CodePipeline to perform operations on your GitHub repository"
+}
+
+//variable "github_personal_access_token" {
+//  type = string
+//  description = "a github personal access token"
+//}
+
 //
 // optional
 //
@@ -55,4 +66,18 @@ variable "dynamo_write_capacity" {
   type = "string"
   description = "the dynamo write throughput"
   default = 15
+}
+
+variable "github_repo_owner" {
+  default = "brietsparks"
+}
+
+variable "github_repo_name" {
+  default = "guestbook"
+}
+
+variable "server_buildspec_path" {
+  type = string
+  description = "path to the server's buildspec file"
+  default = "server/ci/buildspec.yml"
 }
