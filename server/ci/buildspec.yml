@@ -1,10 +1,22 @@
 version: 0.2
 
+# based on:
+# https://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html
+
+# CodeBuilt environment variables:
+# https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+
 phases:
+  pre_build:
+    commands:
+      - echo `date` Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region $AWS_REGION)
   build:
     commands:
-      - docker build -t guestbook -f server/ci/Dockerfile server/.
+      - echo `date` Building the Docker image $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION...
+      - docker build -t $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION -f server/ci/Dockerfile server/.
   post_build:
     commands:
-      - echo "done!"
-      - docker images
+      - echo `date` pushing image to $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
