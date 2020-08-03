@@ -38,7 +38,7 @@ func Serve(model *Model, port string, logger lib.Logger, clientOrigin string) er
 }
 
 func (s *Server) health(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"ok": "1"})
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
 func (s *Server) getItemsByIp(c *gin.Context) {
