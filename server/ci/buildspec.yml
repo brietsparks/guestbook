@@ -11,12 +11,14 @@ phases:
     commands:
       - echo `date` Logging in to Amazon ECR...
       - $(aws ecr get-login --no-include-email --region $AWS_REGION)
+      - REVISION=$CODEBUILD_RESOLVED_SOURCE_VERSION
   build:
     commands:
-      - echo `date` Building the Docker image $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION...
-      - docker build -t $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION -f server/ci/Dockerfile server/.
+      - echo `date` Building the Docker image $IMAGE_NAME:$REVISION...
+      - docker build -t $IMAGE_NAME:$REVISION -f server/ci/Dockerfile server/.
   post_build:
     commands:
-      - echo `date` pushing image to $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - REGISTRY_IMAGE_URI = $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:$REVISION
+      - docker tag $IMAGE_NAME:$REVISION $REGISTRY_IMAGE_URI
+      - echo `date` pushing image to $REGISTRY_IMAGE_URI
+      - docker push $REGISTRY_IMAGE_URI
