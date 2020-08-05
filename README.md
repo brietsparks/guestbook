@@ -1,14 +1,22 @@
 # Guestbook
 
-A simple app with automated infrastructure deployment.
+A simple app with automated infrastructure provisioning, app deployment, and E2E testing.
 
 - Terraform infrastructure deployment to AWS
 - Golang JSON+HTTP API server
 - React webapp client
-- Dockerized, horizontally scaled via Fargate 
+- Dockerized, horizontally scaled via ECS Fargate 
 - DynamoDB
+- E2E Testing with [Terratest](https://terratest.gruntwork.io) and [Cypress](https://www.cypress.io/)
 
-The app is a guestbook where a user can see and submit comments for their particular IP address.
+Table of contents:
+- [Architecture](https://github.com/brietsparks/guestbook#architecture)
+- [Setup](https://github.com/brietsparks/guestbook#setup)
+- [E2E Testing](https://github.com/brietsparks/guestbook#infrastructure--e2e-testing)
+- [Terraform Inputs](https://github.com/brietsparks/guestbook#terraform-inputs)
+- [Terraform Outputs](https://github.com/brietsparks/guestbook#terraform-outputs)
+- [Next steps](https://github.com/brietsparks/guestbook#next-steps)
+- [LICENSE](https://github.com/brietsparks/guestbook#license)
 
 ## Architecture
 
@@ -71,6 +79,15 @@ Deploying the infrastructure and applications to AWS requires just a few command
 A user can see and submit comments for their particular IP address:
 ![Guestbook Application Demo GIF](https://raw.githubusercontent.com/brietsparks/guestbook/master/demo.gif "Guestbook Application Demo GIF")
 
+## Infrastructure + E2E Testing
+On each test run, Terratest provisions the infrastructure. Then Cypress runs E2E tests against the deployed frontend application. Afterwards Terratest deprovisions the infrastructure. 
+
+1. Follow steps 1-3 in [the setup steps](https://github.com/brietsparks/guestbook#setup) above.
+2. In the infrastructure directory, run:
+    ```
+    go test -v -run TestInfrastructure -timeout 15m
+    ```
+
 ## Terraform Inputs
 
 | Name | Description | Type | Default | Required |
@@ -95,11 +112,13 @@ A user can see and submit comments for their particular IP address:
 ## Next steps
 Here are a few things that should be done next:
 
+- separate dev and prod infrastructure environments
+- CI/CD pipeline
 - HTTPS via ELB SSL termination
 - VPC endpoints for DynamoDB
-- CI/CD pipeline
+- implement VPC without 3rd party module
+- modularize infrastructure code
 - minimize permission scope of TF AWS profile 
-- Terratest
 - vendor-neutral rewrite
 
 ## LICENSE

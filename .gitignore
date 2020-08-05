@@ -17,6 +17,9 @@ node_modules/
 /.pnp
 .pnp.js
 
+### test
+test/cypress/videos
+
 # testing
 /coverage
 
