@@ -294,10 +294,5 @@ resource "aws_dynamodb_table" "guestbook_server" {
     name = "ts"
     type = "N"
   }
-
-  tags = {
-    Name = local.dynamo_table_name
-    //Environment = "dev"
-  }
 }
 

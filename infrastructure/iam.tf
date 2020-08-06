@@ -1,4 +1,15 @@
 /*
+A local user that can read and write to DynamoDB
+*/
+resource "aws_iam_user" "local_dev_user" {
+  name = var.local_user_name
+}
+
+resource "aws_iam_access_key" "local_dev_user" {
+  user = aws_iam_user.local_dev_user.name
+}
+
+/*
 Allow an ECS task to execute what it needs. See:
 */
 // the role
@@ -10,6 +21,7 @@ resource "aws_iam_role" "guestbook_task_execution" {
 data "aws_iam_policy_document" "guestbook_task_execution" {
   statement {
     actions = ["sts:AssumeRole"]
+
     principals {
       type        = "Service"
       identifiers = ["ecs-tasks.amazonaws.com"]
@@ -25,7 +37,7 @@ resource "aws_iam_role_policy_attachment" "guestbook_task_execution" {
 
 
 /*
-Allow an ECS task to read and write to DynamoDB
+Allow an ECS task and the local dev user to read and write to DynamoDB
 */
 // the role
 resource "aws_iam_role" "dynamodb_data_access_role" {
@@ -41,6 +53,10 @@ data "aws_iam_policy_document" "dynamo_db_data_role_assumption" {
     principals {
       identifiers = ["ecs-tasks.amazonaws.com"]
       type        = "Service"
+    }
+    principals {
+      identifiers = [aws_iam_user.local_dev_user.arn]
+      type = "AWS"
     }
   }
 }
@@ -68,6 +84,8 @@ data "aws_iam_policy_document" "dynamodb_data_access" {
       "dynamodb:UpdateItem",
       "dynamodb:UpdateTable"
     ]
-    resources = ["*"]
+    resources = [
+      aws_dynamodb_table.guestbook_server.arn
+    ]
   }
 }
