@@ -1,10 +1,11 @@
-package main
+package test
 
 import (
 	"fmt"
 	httpHelper "github.com/gruntwork-io/terratest/modules/http-helper"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -12,9 +13,10 @@ import (
 )
 
 func TestInfrastructure(t *testing.T) {
+	varFileName := os.Getenv("VAR_FILE")
 	terraformOptions := &terraform.Options{
-		TerraformDir: ".",
-		VarFiles: []string{"./dev.tfvars"},
+		TerraformDir: "../environments/test",
+		VarFiles: []string{varFileName},
 	}
 
 	// Clean up resources with "terraform destroy" at the end of the test.
@@ -50,7 +52,7 @@ func runCypressTests(url string) error {
 	cmdStr := fmt.Sprintf("npm run test -- --env URL=\"%s\"", url)
 	parts := strings.Fields(cmdStr)
 	cmd := exec.Command(parts[0], parts[1:]...)
-	cmd.Dir = "../test"
+	cmd.Dir = "../../test"
 	_, err := cmd.Output()
 	return err
 }

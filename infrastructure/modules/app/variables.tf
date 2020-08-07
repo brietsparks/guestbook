@@ -6,6 +6,11 @@ variable "profile" {
   description = "an aws profile to act on behalf of terraform"
 }
 
+variable "environment" {
+  type = string
+  description = "the environment"
+}
+
 //
 // optional
 //

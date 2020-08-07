@@ -2,7 +2,7 @@
 
 A simple app with automated infrastructure provisioning, app deployment, and E2E testing.
 
-- Terraform infrastructure deployment to AWS
+- Terraform IaC, modularized and multi-environment 
 - Golang JSON+HTTP API server
 - React webapp client
 - Dockerized, horizontally scaled via ECS Fargate 
@@ -11,10 +11,10 @@ A simple app with automated infrastructure provisioning, app deployment, and E2E
 
 Table of contents:
 - [Architecture](https://github.com/brietsparks/guestbook#architecture)
-- [Setup](https://github.com/brietsparks/guestbook#setup)
-- [E2E Testing](https://github.com/brietsparks/guestbook#infrastructure--e2e-testing)
-- [Terraform Inputs](https://github.com/brietsparks/guestbook#terraform-inputs)
-- [Terraform Outputs](https://github.com/brietsparks/guestbook#terraform-outputs)
+- [Dependencies](https://github.com/brietsparks/guestbook#dependencies)
+- [Deployment and Tear Down](https://github.com/brietsparks/guestbook#deployment-and-tear-down)
+- [Infrastructure E2E Testing](https://github.com/brietsparks/guestbook#infrastructure--e2e-testing)
+- [Deploy dev environment infrastructure](https://github.com/brietsparks/guestbook#deploy-dev-environment-infrastructure)
 - [Next steps](https://github.com/brietsparks/guestbook#next-steps)
 - [LICENSE](https://github.com/brietsparks/guestbook#license)
 
@@ -24,100 +24,122 @@ The frontend and backend applications each run in Docker containers and are hori
 
 ![AWS Architecture Diagram for Guestbook Application](https://raw.githubusercontent.com/brietsparks/guestbook/master/aws-arch-diagram.png "AWS Architecture Diagram for Guestbook Application")
 
-## Setup
-Deploying the infrastructure and applications to AWS requires just a few commands. **Warning: this will create AWS resources that cost money**. After deploying and testing you can run `terraform destroy` (see the steps below) to destroy the resources. 
-
-**Dependencies**
-- an AWS account with an IAM user capable of creating the resources. Currently, I have been using `AdministratorAccess`. Minimizing the required permission scope is on the list of todos (see "Next steps" section below).
-- a locally configured AWS profile
+## Dependencies
+- an AWS account with an IAM user capable of creating the resources. Currently, I have been using `AdministratorAccess`. Determining the minimum permission scope is on the list of todos (see [Next steps](https://github.com/brietsparks/guestbook#next-steps)).
+- a locally configured AWS profile for the above IAM user
 - Terraform `~> 0.12.0`
+- GNU Make
 
-**Steps**
-1. clone the repo
+## Deployment and Tear Down
+This section Deploying the infrastructure and applications to AWS requires just a few commands. **Warning: this will create AWS resources that cost money**. 
+
+**Deployment steps**
+1. Clone the repo
     ```
     git clone git@github.com:brietsparks/guestbook.git
     ```
 
-2. navigate to the `/infrastructure` directory,
-    ```
-    cd guestbook/infrastructure
-    ``` 
-    create a Terrfaform var-file,
+2. In the project root, create a Terraform var-file. Run:
     ```
     touch .tfvars
     ```
-    and set your AWS profile in the file.
+    and in the file, set your AWS profile:
     ```
     // .tfvars
-    profile = "my-iam-profile"
+    profile = <iam-profile>
     ```
-    See the "Terraform variables" section below for customizability.
+    See the [Prod Terraform Inputs](https://github.com/brietsparks/guestbook/blob/master/infrastructure/environments/prod/README.md) for additional optional parameters.
     
-3. Initialize Terraform
+3. Next, run:
     ```
-    terraform init
-    ``` 
-    
-4. Run Terraform in the infrastructure directory:
+    make prod
     ```
-    terraform apply -var-file=.tfvars
-    ```
-    You will be prompted with a Terraform plan. Type `yes` to create the resources.
+    When prompted with the Terraform plan, type `yes` to create the resources. **These resources cost money.**
    
-5. After creating the resources, Terraform will output the load balancer's DNS host address:
+4. After Terraform creates the resources, it will output the load balancer DNS host address:
     ```
     alb_dns_host = http://guestbook-server-123456789.us-west-2.elb.amazonaws.com
     ``` 
-    In you browser, navigate to this url to use the app.
+    Wait a minute or two for the ECS task containers to start. Then in the browser, navigate to DNS host address to use the app.
 
-6. If you want to tear down the app and its AWS resources, run:
+5. To tear down the app and its AWS resources, run:
     ```
-    terraform destroy -var-file=.tfvars
+    make prod-down
     ```
-    You will be prompted with a Terraform plan. Type `yes` to destroy the resources.
-    
-A user can see and submit comments for their particular IP address:
+    When prompted with the Terraform plan, type `yes` to destroy the resources.
+
+App demo: a user can view and submit comments for their particular IP address:
 ![Guestbook Application Demo GIF](https://raw.githubusercontent.com/brietsparks/guestbook/master/demo.gif "Guestbook Application Demo GIF")
 
 ## Infrastructure + E2E Testing
-On each test run, Terratest provisions the infrastructure. Then Cypress runs E2E tests against the deployed frontend application. Afterwards Terratest deprovisions the infrastructure. 
+On each test run:
+1. Terratest provisions the infrastructure
+2. Cypress runs E2E tests against the deployed frontend application
+3. Terratest deprovisions the infrastructure. 
 
-1. Follow steps 1-3 in [the setup steps](https://github.com/brietsparks/guestbook#setup) above.
-2. In the infrastructure directory, run:
+**Dependencies**
+- the [base dependencies](https://github.com/brietsparks/guestbook#dependencies)
+- Go `>=1.14`
+- NodeJS `>=12.8.1` 
+- yarn package manager. If you don't have yarn, then run `npm install` in the /client directory before running the tests.   
+
+**Testing steps**
+1. Follow steps 1 and 2 of [the deployment steps](https://github.com/brietsparks/guestbook#deployment-and-tear-down) above.
+
+2. In the project root, run:
+   ```
+   make test
+   ```
+   When prompted with the Terraform plan, type `yes` to create the resources.
+
+   
+## Deploy dev environment infrastructure
+The dev environment creates a DynamoDB table and an IAM user+role that can access the table. Terraform outputs the credentials which the backend app can use for local development.
+
+**Steps:**
+1. In the project root, create a Terraform var-file and set the `profile`. See the [Dev Terraform Inputs](https://github.com/brietsparks/guestbook/blob/master/infrastructure/environments/dev/README.md) for additional optional parameters.
+
+2. Run:
+   ```
+   make dev
+   ```
+
+3. After Terraform creates the resources, it will output the IAM config and credentials for accessing the database:
+
     ```
-    go test -v -run TestInfrastructure -timeout 15m
+    Outputs:
+
+    cli_config = 
+    [local_dev_user]
+    region = us-west-2
+    
+    [local_dev_user_role]
+    role_arn = arn:aws:iam::0123456789012:role/dynamodb_data_access_role_dev
+    source_profile = local_dev_user
+    
+    cli_credentials = 
+    [local_dev_user]
+    aws_access_key_id = <key>
+    aws_secret_access_key = <secret>
     ```
+   
+4. Paste the config and credential entries into your local shared AWS config and credentials files (in `~/.aws`)
 
-## Terraform Inputs
+5. You can now run the server locally using the deployed dev database. See the [steps for using the server locally](https://github.com/brietsparks/guestbook/blob/master/server/README.md).
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| availability\_zones | array of aws availability zones of the provided region | `list` | <pre>[<br>  "us-west-2a",<br>  "us-west-2b"<br>]</pre> | no |
-| client\_container\_port | the port that the client serves from | `string` | `80` | no |
-| client\_image | image name of the client app | `string` | `"brietsparks/guestbook-client"` | no |
-| dynamo\_read\_capacity | the dynamo read throughput | `string` | `15` | no |
-| dynamo\_write\_capacity | the dynamo write throughput | `string` | `15` | no |
-| profile | an aws profile to act on behalf of terraform | `string` | n/a | yes |
-| region | an aws region | `string` | `"us-west-2"` | no |
-| server\_container\_port | the port that the server serves from | `string` | `80` | no |
-| server\_image | image name of the server app | `string` | `"brietsparks/guestbook-server"` | no |
-
-## Terraform Outputs
-
-| Name | Description |
-|------|-------------|
-| alb\_dns\_host | the load balancer's DNS host address |
-
+6. To tear down the dev infrastructure, run:
+    ```
+    make down-down
+    ```
+    When prompted with the Terraform plan, type `yes` to destroy the resources.
 
 ## Next steps
 Here are a few things that should be done next:
 
-- separate dev and prod infrastructure environments
 - CI/CD pipeline
 - HTTPS via ELB SSL termination
 - VPC endpoints for DynamoDB
 - implement VPC without 3rd party module
-- modularize infrastructure code
 - minimize permission scope of TF AWS profile 
 - vendor-neutral rewrite
 
