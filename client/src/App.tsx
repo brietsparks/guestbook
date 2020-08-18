@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useAsync } from 'react-async';
 import httpClient from 'superagent';
 import moment from 'moment';
+import { Form, Input, Button, Card, Comment, Typography } from 'antd';
+
 import './App.css';
 
 // allows the static CRA app to use runtime environment variables
@@ -13,12 +15,12 @@ if (!apiUrl) {
 
 export default function App() {
   const { data: initialItems, error: loadError } = useAsync({ promiseFn: getItems });
-  const [items, setItems] = useState();
+  const [items, setItems] = useState<Item[]|undefined>();
   useEffect(() => setItems(initialItems), [setItems, initialItems]);
-  const [saveError, setSaveError] = useState();
+  const [saveError, setSaveError] = useState('');
 
   const handleNewItem = (item: Item) => {
-    const next = [...items];
+    const next = items ? [...items] : [];
     next.unshift(item);
     setItems(next);
     setSaveError('');
@@ -28,11 +30,16 @@ export default function App() {
     <div id="hero-outer">
       <div id="hero-inner">
         <div id="content">
-          <Form onNewItem={handleNewItem} onError={setSaveError}/>
+          <AppForm
+            onNewItem={handleNewItem}
+            onError={setSaveError}
+            errorMessage={saveError ? 'Error saving data :(' : ''}
+          />
 
           <div id="items">
-            {loadError && !items && <p className="error">Error loading data :(</p>}
-            {saveError && <p className="error">Error saving data :(</p>}
+            {loadError &&
+            <Typography.Text type="danger" id="load-error">Error loading data :(</Typography.Text>
+            }
 
             <ol>
             {items?.slice(0, 10).map((item: Item) => (
@@ -72,11 +79,17 @@ async function getItems(): Promise<Item[]> {
 interface FormProps {
   onNewItem: (item: Item) => void,
   onError: (value: string) => void,
+  errorMessage?: string,
 }
 
-function Form({ onNewItem, onError }: FormProps) {
+function AppForm({ onNewItem, onError, errorMessage }: FormProps) {
   const [value, setValue] = useState('');
   const valueIsValid = !!value && value.length <= 280;
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    onError('');
+  };
 
   const handleResolve = (item: Item) => {
     setValue('');
@@ -96,19 +109,28 @@ function Form({ onNewItem, onError }: FormProps) {
   }
 
   return (
-    <div id="form">
-      <input
-        id="input"
-        value={value}
-        onChange={e => setValue(e.target.value)}
-      />
+    <Form layout="inline">
+      <Form.Item
+        validateStatus={!!errorMessage ? 'error' : undefined}
+        help={errorMessage}
+      >
+        <Input
+          id="input"
+          value={value}
+          onChange={handleChange}
+        />
+      </Form.Item>
+      <Form.Item className="form-item-submit">
+        <Button
+          id="button"
+          onClick={handleSubmit}
+          loading={isSaving}
+          disabled={!valueIsValid || isSaving}
+          type="primary"
+        >Submit</Button>
+      </Form.Item>
 
-      <button
-        id="button"
-        onClick={handleSubmit}
-        disabled={!valueIsValid || isSaving}
-      >Submit</button>
-    </div>
+    </Form>
   );
 }
 
@@ -120,9 +142,11 @@ function ItemView({ ts, value }: ItemViewProps) {
   const formattedTs = moment(new Date(ts * 1000)).format('M-D-YYYY h:mm a');
 
   return (
-    <div className="item">
-      <p className="ts">{formattedTs}</p>
-      <p className="value">{value}</p>
-    </div>
+    <Card className="item">
+      <Comment
+        author={<span>{formattedTs}</span>}
+        content={<Typography.Text>{value}</Typography.Text>}
+      />
+    </Card>
   );
 }
