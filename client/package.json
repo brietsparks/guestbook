@@ -13,7 +13,7 @@
     "@types/react-dom": "^16.9.0",
     "@types/superagent": "^4.1.8",
     "antd": "^4.5.4",
-    "moment": "^2.27.0",
+    "moment": "^2.29.2",
     "react": "^16.13.1",
     "react-async": "^10.0.1",
     "react-dom": "^16.13.1",
